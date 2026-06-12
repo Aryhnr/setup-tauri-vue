@@ -1,0 +1,23 @@
+[package]
+name = "pos-toko-madura"
+version = "0.1.0"
+description = "POS Toko Madura"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+name = "pos_toko_madura_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = "2.2.5"
+
+[dependencies]
+tauri = "2.2.5"
+tauri-plugin-opener = "2.2.5"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# paksa sama dengan project GitHub yang berhasil
+time = "=0.3.37"
