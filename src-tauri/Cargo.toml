@@ -10,10 +10,10 @@ name = "pos_toko_madura_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = "2.2.5"
+tauri-build = { version = "2.2.5", features = [] }
 
 [dependencies]
-tauri = "2.2.5"
+tauri = { version = "2.2.5", features = [] }
 tauri-plugin-opener = "2.2.5"
 
 serde = { version = "1", features = ["derive"] }
@@ -21,3 +21,4 @@ serde_json = "1"
 
 # paksa sama dengan project GitHub yang berhasil
 time = "=0.3.37"
+rusqlite = { version = "0.40.1", features = ["bundled"] }
