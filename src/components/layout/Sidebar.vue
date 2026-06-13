@@ -1,36 +1,45 @@
 <template>
-  <aside class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-    <div class="px-5 py-5 border-b border-gray-200 dark:border-gray-700">
-      <h1 class="text-lg font-bold text-blue-600 dark:text-blue-400">🏪 {{ storeName }}</h1>
-      <p class="text-xs text-gray-400 mt-0.5">Sistem Manajemen Toko</p>
+  <aside class="w-64 h-screen flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col select-none">
+    <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3">
+      <div class="p-2 bg-blue-600 rounded-md">
+        <BuildingStorefrontIcon class="w-6 h-6 text-white" />
+      </div>
+      <div>
+        <h1 class="text-base font-bold text-gray-900 dark:text-white tracking-wide uppercase">{{ storeName }}</h1>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5">Sistem Manajemen Toko</p>
+      </div>
     </div>
 
-    <nav class="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
       <router-link
         v-for="item in menu"
         :key="item.path"
         :to="item.path"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors border"
         :class="isActive(item.path)
-          ? 'bg-blue-600 text-white'
-          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+          ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400'
+          : 'border-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'"
       >
         <component :is="item.icon" class="w-5 h-5" />
         <span>{{ item.label }}</span>
       </router-link>
     </nav>
 
-    <div class="p-3 border-t border-gray-200 dark:border-gray-700">
-      <button class="btn-secondary w-full" @click="toggleDark">
-        <span v-if="isDark">☀️ Light Mode</span>
-        <span v-else>🌙 Dark Mode</span>
+    <div class="p-4 border-t border-gray-200 dark:border-gray-800">
+      <button 
+        class="flex items-center justify-center gap-2 w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" 
+        @click="toggleDark"
+      >
+        <SunIcon v-if="isDark" class="w-5 h-5" />
+        <MoonIcon v-else class="w-5 h-5" />
+        <span>{{ isDark ? 'Light Mode' : 'Dark Mode' }}</span>
       </button>
     </div>
   </aside>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import {
   HomeIcon,
@@ -41,6 +50,9 @@ import {
   TruckIcon,
   ChartBarIcon,
   CogIcon,
+  BuildingStorefrontIcon,
+  SunIcon,
+  MoonIcon
 } from "@heroicons/vue/24/outline";
 
 const route = useRoute();

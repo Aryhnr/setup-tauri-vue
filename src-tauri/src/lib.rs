@@ -23,6 +23,22 @@ pub fn run() {
             commands::category::get_categories,
             commands::category::add_category,
             commands::category::delete_category,
+            commands::transaction::process_transaction,
+            commands::transaction::get_recent_transactions,
+            commands::print_order::get_print_orders,
+            commands::print_order::add_print_order,
+            commands::print_order::update_print_order,
+            commands::print_order::update_print_order_status,
+            commands::print_order::delete_print_order,
+            commands::service::get_services,
+            commands::service::add_service,
+            commands::service::delete_service,
+            commands::service::get_service_summary_today,
+            commands::report::get_revenue_report,
+            commands::report::get_top_products,
+            commands::report::get_category_report,
+            commands::report::get_service_type_report,
+            commands::report::get_stock_alert_report,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
