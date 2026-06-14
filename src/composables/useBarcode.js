@@ -1,19 +1,33 @@
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
+
+/**
+ * State global — shared supaya notifikasi "scanner siap" bisa
+ * ditampilkan dari mana saja (App.vue, PosView, dll).
+ */
+export const scannerReady = ref(false);
+export const scannerReadyMessage = ref("");
+
+let readyTimer = null;
+
+function showScannerReady() {
+  scannerReady.value = true;
+  scannerReadyMessage.value =
+    "🔫 Barcode scanner terdeteksi dan siap digunakan!";
+  clearTimeout(readyTimer);
+  readyTimer = setTimeout(() => {
+    scannerReady.value = false;
+  }, 4000);
+}
 
 /**
  * Composable untuk mendeteksi input dari barcode scanner USB (plug & play,
  * bekerja sebagai keyboard HID). Scanner mengetik karakter barcode secara
  * sangat cepat lalu diakhiri dengan Enter.
  *
- * Strategi: kumpulkan karakter yang diketik dalam jeda waktu singkat
- * (< `maxIntervalMs` antar karakter). Jika jeda lebih lama, buffer dianggap
- * input manual biasa dan di-reset. Saat Enter ditekan dan buffer cukup
- * panjang, anggap sebagai hasil scan barcode dan panggil `onScan`.
- *
  * @param {(barcode: string) => void} onScan - dipanggil dengan hasil scan
  * @param {Object} options
- * @param {number} options.minLength - panjang minimum barcode yang valid (default 3)
- * @param {number} options.maxIntervalMs - jeda maksimum antar karakter dalam ms (default 50)
+ * @param {number} options.minLength - panjang minimum barcode valid (default 3)
+ * @param {number} options.maxIntervalMs - jeda maks antar karakter dalam ms (default 50)
  */
 export function useBarcode(onScan, options = {}) {
   const minLength = options.minLength ?? 3;
@@ -21,11 +35,9 @@ export function useBarcode(onScan, options = {}) {
 
   let buffer = "";
   let lastTime = 0;
+  let scanDetectedOnce = false;
 
   function handleKeydown(e) {
-    // Jangan tangkap input saat user sedang mengetik di field teks biasa,
-    // kecuali field tersebut secara eksplisit menandai diri sebagai
-    // penerima scan (data-barcode-input).
     const target = e.target;
     const isTextInput =
       target &&
@@ -38,6 +50,10 @@ export function useBarcode(onScan, options = {}) {
 
     if (e.key === "Enter") {
       if (buffer.length >= minLength && elapsed < maxIntervalMs) {
+        if (!scanDetectedOnce) {
+          scanDetectedOnce = true;
+          showScannerReady();
+        }
         onScan(buffer);
         e.preventDefault();
       }
@@ -45,20 +61,12 @@ export function useBarcode(onScan, options = {}) {
       return;
     }
 
-    // Reset buffer jika jeda terlalu lama (kemungkinan ketikan manual)
     if (elapsed > maxIntervalMs) {
       buffer = "";
     }
 
-    // Hanya tangkap karakter alfanumerik (barcode umumnya angka/huruf)
     if (e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key)) {
-      // Jika sedang fokus di input teks biasa, jangan ganggu (biarkan
-      // ketikan masuk ke input seperti biasa), tapi tetap track buffer
-      // untuk deteksi pola scan cepat.
       buffer += e.key;
-      if (isTextInput) {
-        // tidak preventDefault, biarkan input normal jalan
-      }
     }
   }
 

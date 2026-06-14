@@ -1,39 +1,60 @@
 <template>
   <div class="space-y-4">
-    <!-- Ringkasan hari ini -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="card p-4">
-        <p class="text-sm text-gray-400">Total Penjualan Hari Ini</p>
-        <p class="text-2xl font-bold mt-1">{{ formatRupiah(store.summaryToday.total_sell) }}</p>
+    <!-- Ringkasan Hari Ini -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 select-none">
+      <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total Penjualan</p>
+          <p class="text-xl font-mono font-black text-gray-900 dark:text-white mt-1">{{ formatRupiah(store.summaryToday.total_sell) }}</p>
+        </div>
+        <div class="p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-400">
+          <BanknotesIcon class="w-5 h-5" />
+        </div>
       </div>
-      <div class="card p-4">
-        <p class="text-sm text-gray-400">Total Keuntungan Hari Ini</p>
-        <p class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">
-          {{ formatRupiah(store.summaryToday.total_profit) }}
-        </p>
+
+      <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total Keuntungan</p>
+          <p class="text-xl font-mono font-black text-green-600 dark:text-green-400 mt-1">
+            {{ formatRupiah(store.summaryToday.total_profit) }}
+          </p>
+        </div>
+        <div class="p-2 bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900 rounded-md text-green-600 dark:text-green-400">
+          <ArrowTrendingUpIcon class="w-5 h-5" />
+        </div>
       </div>
-      <div class="card p-4">
-        <p class="text-sm text-gray-400">Jumlah Transaksi Hari Ini</p>
-        <p class="text-2xl font-bold mt-1">{{ store.summaryToday.count }}</p>
+
+      <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider">Jumlah Transaksi</p>
+          <p class="text-xl font-mono font-black text-gray-900 dark:text-white mt-1">{{ store.summaryToday.count }}</p>
+        </div>
+        <div class="p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-400">
+          <DocumentCheckIcon class="w-5 h-5" />
+        </div>
       </div>
     </div>
 
     <!-- Toolbar -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div class="flex gap-2 overflow-x-auto">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 select-none">
+      <!-- Segmented Type Tabs Filter -->
+      <div class="flex gap-1.5 border border-gray-200 dark:border-gray-800 p-1 rounded-lg bg-gray-50 dark:bg-gray-950 overflow-x-auto invisible-scrollbar">
         <button
           v-for="tab in typeTabs"
           :key="tab.value || 'all'"
-          class="px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+          class="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap border transition-all"
           :class="activeType === tab.value
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
+            ? 'bg-white border-gray-200 text-blue-600 dark:bg-gray-900 dark:border-gray-800 dark:text-blue-400 font-extrabold'
+            : 'bg-transparent border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'"
           @click="setType(tab.value)"
         >
           {{ tab.label }}
         </button>
       </div>
-      <BaseButton @click="openCreate">+ Tambah Transaksi</BaseButton>
+      <BaseButton class="flex items-center gap-1.5 self-end sm:self-auto" @click="openCreate">
+        <PlusIcon class="w-4 h-4" />
+        <span>Tambah Transaksi</span>
+      </BaseButton>
     </div>
 
     <!-- Tabel -->
@@ -42,25 +63,39 @@
       <template #cell-sell_price="{ row }">{{ formatRupiah(row.sell_price) }}</template>
       <template #cell-buy_price="{ row }">{{ formatRupiah(row.buy_price) }}</template>
       <template #cell-profit="{ row }">
-        <span class="text-green-600 dark:text-green-400 font-medium">{{ formatRupiah(row.profit) }}</span>
+        <span class="text-green-600 dark:text-green-400 font-bold">{{ formatRupiah(row.profit) }}</span>
       </template>
       <template #cell-transaction_date="{ row }">{{ formatDate(row.transaction_date) }}</template>
       <template #cell-customer_info="{ row }">{{ row.customer_info || "-" }}</template>
 
       <template #actions="{ row }">
-        <button class="text-red-500 hover:underline text-sm" @click="confirmDelete(row)">Hapus</button>
+        <div class="flex justify-end select-none">
+          <button 
+            class="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200 dark:hover:border-red-800/50 rounded-md transition-colors" 
+            @click="confirmDelete(row)"
+          >
+            <TrashIcon class="w-3.5 h-3.5" />
+            <span>Hapus</span>
+          </button>
+        </div>
       </template>
     </BaseTable>
 
-    <p v-if="store.loading" class="text-sm text-gray-400">Memuat data...</p>
-    <p v-if="store.error" class="text-sm text-red-500">{{ store.error }}</p>
+    <!-- State Status Footer -->
+    <div class="flex flex-col gap-1 text-xs font-medium select-none px-1">
+      <p v-if="store.loading" class="text-gray-400">Sinkronisasi data transaksi...</p>
+      <p v-if="store.error" class="text-red-500 font-bold">{{ store.error }}</p>
+    </div>
 
     <!-- Modal Tambah -->
     <BaseModal v-model="showModal" title="Tambah Transaksi Jasa">
-      <form class="space-y-3" @submit.prevent="submit">
+      <form class="space-y-4" @submit.prevent="submit">
         <div>
-          <label class="label">Jenis Layanan</label>
-          <select v-model="form.service_type" class="input">
+          <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Jenis Layanan</label>
+          <select 
+            v-model="form.service_type" 
+            class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+          >
             <option value="TOKEN_PLN">Token Listrik PLN</option>
             <option value="TOPUP">Top Up E-Wallet</option>
             <option value="PULSA">Pulsa</option>
@@ -75,31 +110,36 @@
           placeholder="(opsional)"
         />
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-4">
           <BaseInput v-model="form.buy_price" type="number" step="500" label="Harga Modal" />
           <BaseInput v-model="form.sell_price" type="number" step="500" label="Harga Jual" />
         </div>
 
-        <div class="card p-3 bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800">
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-500">Keuntungan</span>
-            <span class="font-bold text-lg text-green-600 dark:text-green-400">{{ formatRupiah(computedProfit) }}</span>
+        <!-- Panel Kalkulasi Keuntungan -->
+        <div class="bg-green-50/50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-lg p-4 select-none">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Estimasi Profit Jasa</span>
+            <span class="font-mono font-black text-xl text-green-600 dark:text-green-400">{{ formatRupiah(computedProfit) }}</span>
           </div>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2">
+        <div class="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
           <BaseButton type="button" variant="secondary" @click="showModal = false">Batal</BaseButton>
           <BaseButton type="submit">Simpan</BaseButton>
         </div>
       </form>
     </BaseModal>
 
-    <!-- Modal konfirmasi hapus -->
+    <!-- Modal Konfirmasi Hapus -->
     <BaseModal v-model="showDeleteModal" title="Hapus Transaksi">
-      <p class="text-sm text-gray-500 mb-4">Yakin ingin menghapus transaksi ini?</p>
-      <div class="flex justify-end gap-2">
-        <BaseButton variant="secondary" @click="showDeleteModal = false">Batal</BaseButton>
-        <BaseButton variant="danger" @click="doDelete">Hapus</BaseButton>
+      <div class="select-none">
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+          Yakin ingin menghapus dokumen transaksi ini? Tindakan ini akan memperbarui akumulasi laba harian sistem.
+        </p>
+        <div class="flex justify-end gap-2">
+          <BaseButton variant="secondary" @click="showDeleteModal = false">Batal</BaseButton>
+          <BaseButton variant="danger" @click="doDelete">Hapus</BaseButton>
+        </div>
       </div>
     </BaseModal>
   </div>
@@ -112,6 +152,13 @@ import BaseButton from "../components/ui/BaseButton.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
 import BaseTable from "../components/ui/BaseTable.vue";
+import { 
+  BanknotesIcon, 
+  ArrowTrendingUpIcon, 
+  DocumentCheckIcon, 
+  PlusIcon, 
+  TrashIcon 
+} from "@heroicons/vue/24/outline";
 
 const store = useServiceStore();
 

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
+import { useNotification } from "../composables/useNotification";
 
 export const usePosStore = defineStore("pos", {
   state: () => ({
@@ -139,6 +140,9 @@ export const usePosStore = defineStore("pos", {
         this.lastResult = await invoke("process_transaction", { payload });
         this.cart = [];
         this.paidAmount = 0;
+        // Cek stok menipis setelah transaksi berhasil
+        const { checkLowStock } = useNotification();
+        checkLowStock();
         return true;
       } catch (err) {
         this.error = err?.toString() ?? "Gagal memproses transaksi";

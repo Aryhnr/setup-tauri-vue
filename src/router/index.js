@@ -20,6 +20,12 @@ const routes = [
     meta: { title: "Produk & Stok" },
   },
   {
+    path: "/stok",
+    name: "stok",
+    component: () => import("../views/StockView.vue"),
+    meta: { title: "Manajemen Stok" },
+  },
+  {
     path: "/percetakan",
     name: "percetakan",
     component: () => import("../views/PrintView.vue"),
@@ -32,13 +38,23 @@ const routes = [
     meta: { title: "Jasa & Layanan" },
   },
   {
+    path: "/supplier",
+    name: "supplier",
+    component: () => import("../views/SupplierView.vue"),
+    meta: { title: "Supplier" },
+  },
+  {
     path: "/laporan",
     name: "laporan",
     component: () => import("../views/ReportView.vue"),
     meta: { title: "Laporan" },
   },
-  // Modul lain (Supplier, Pengaturan)
-  // akan ditambahkan di fase-fase berikutnya.
+  {
+    path: "/pengaturan",
+    name: "pengaturan",
+    component: () => import("../views/SettingView.vue"),
+    meta: { title: "Pengaturan" },
+  },
 ];
 
 const router = createRouter({

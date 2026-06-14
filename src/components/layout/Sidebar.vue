@@ -52,7 +52,8 @@ import {
   CogIcon,
   BuildingStorefrontIcon,
   SunIcon,
-  MoonIcon
+  MoonIcon,
+  ArrowDownTrayIcon,
 } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
@@ -62,7 +63,8 @@ const isDark = ref(false);
 const menu = [
   { path: "/", label: "Dashboard", icon: HomeIcon },
   { path: "/kasir", label: "Kasir / POS", icon: ShoppingCartIcon },
-  { path: "/produk", label: "Produk & Stok", icon: CubeIcon },
+  { path: "/produk", label: "Produk", icon: CubeIcon },
+  { path: "/stok", label: "Manajemen Stok", icon: ArrowDownTrayIcon },
   { path: "/percetakan", label: "Percetakan", icon: PrinterIcon },
   { path: "/jasa", label: "Jasa & Layanan", icon: BoltIcon },
   { path: "/supplier", label: "Supplier", icon: TruckIcon },

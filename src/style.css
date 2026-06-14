@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
-/* Tailwind v4: dark mode diaktifkan lewat class .dark di <html>,
-   bukan via tailwind.config.js darkMode option */
+/* Tambahkan ini */
+@source "../src";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
