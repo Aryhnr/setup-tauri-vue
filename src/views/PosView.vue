@@ -1,23 +1,25 @@
 <template>
-  <div class="flex flex-col lg:flex-row gap-4 h-full">
-    <!-- Kiri: pencarian + grid produk -->
-    <div class="flex-1 flex flex-col gap-3 min-h-0">
-      <div class="relative">
+  <div class="flex flex-col lg:flex-row gap-4 h-full min-h-0">
+    <div class="flex-1 flex flex-col gap-4 min-h-0">
+      <div class="relative flex-shrink-0 select-none">
         <input
           ref="searchInput"
           v-model="keyword"
           type="text"
-          class="input pl-9"
+          class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md pl-10 pr-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
           placeholder="Scan barcode atau cari nama produk..."
           data-barcode-input="true"
           @keyup.enter="search"
         />
-        <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+        <div class="absolute left-3 top-3 flex items-center pointer-events-none">
+          <MagnifyingGlassIcon class="w-4 h-4 text-gray-400" />
+        </div>
       </div>
 
-      <div class="flex gap-2">
-        <BaseButton variant="secondary" class="text-xs" @click="showServiceModal = true">
-          + Tambah Percetakan / Jasa
+      <div class="flex gap-2 flex-shrink-0 select-none">
+        <BaseButton variant="secondary" class="text-xs flex items-center gap-1.5" @click="showServiceModal = true">
+          <PlusIcon class="w-3.5 h-3.5" />
+          <span>Tambah Percetakan / Jasa</span>
         </BaseButton>
       </div>
 
@@ -26,11 +28,13 @@
       </div>
     </div>
 
-    <!-- Kanan: keranjang + pembayaran -->
-    <div class="w-full lg:w-96 flex-shrink-0 card p-4 flex flex-col gap-3">
-      <h3 class="font-semibold flex items-center gap-2">🛒 Keranjang</h3>
+    <div class="w-full lg:w-96 flex-shrink-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex flex-col gap-4 select-none">
+      <div class="flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-3">
+        <ShoppingCartIcon class="w-5 h-5 text-gray-500" />
+        <h3 class="font-bold text-gray-900 dark:text-white">Keranjang</h3>
+      </div>
 
-      <div class="flex-1 overflow-y-auto min-h-[120px] max-h-[40vh]">
+      <div class="flex-1 overflow-y-auto min-h-[120px] max-h-[40vh] lg:max-h-none space-y-1">
         <CartItem
           v-for="(item, index) in posStore.cart"
           :key="`${item.product_id ?? 'custom'}-${index}`"
@@ -38,12 +42,14 @@
           @update-quantity="(qty) => posStore.updateQuantity(index, qty)"
           @remove="posStore.removeItem(index)"
         />
-        <p v-if="posStore.cart.length === 0" class="text-center text-gray-400 text-sm py-8">
-          Keranjang masih kosong
-        </p>
+        
+        <div v-if="posStore.cart.length === 0" class="h-full flex flex-col items-center justify-center text-gray-400 py-12">
+          <ShoppingCartIcon class="w-8 h-8 mb-2 opacity-30" />
+          <p class="text-sm font-medium">Keranjang masih kosong</p>
+        </div>
       </div>
 
-      <hr class="border-gray-100 dark:border-gray-700" />
+      <hr class="border-gray-100 dark:border-gray-800" />
 
       <PaymentPanel
         :total="posStore.total"
@@ -58,28 +64,28 @@
       />
     </div>
 
-    <!-- Modal tambah Percetakan / Jasa -->
     <BaseModal v-model="showServiceModal" title="Tambah Percetakan / Jasa">
-      <form class="space-y-3" @submit.prevent="addServiceItem">
+      <form class="space-y-4" @submit.prevent="addServiceItem">
         <BaseInput v-model="serviceForm.item_name" label="Nama Layanan" required placeholder="Print A4 Hitam Putih" />
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-4">
           <BaseInput v-model="serviceForm.quantity" type="number" label="Jumlah" />
           <BaseInput v-model="serviceForm.unit_price" type="number" step="100" label="Harga Satuan" />
         </div>
-        <div class="flex justify-end gap-2 pt-2">
+        <div class="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
           <BaseButton type="button" variant="secondary" @click="showServiceModal = false">Batal</BaseButton>
           <BaseButton type="submit">Tambah ke Keranjang</BaseButton>
         </div>
       </form>
     </BaseModal>
 
-    <!-- Modal sukses transaksi -->
     <BaseModal v-model="showSuccessModal" title="Transaksi Berhasil">
-      <div class="text-center py-4">
-        <p class="text-4xl mb-2">✅</p>
-        <p class="text-sm text-gray-500">No. Invoice</p>
-        <p class="text-lg font-bold mb-4">{{ posStore.lastResult?.invoice_no }}</p>
-        <BaseButton @click="showSuccessModal = false">Transaksi Baru</BaseButton>
+      <div class="text-center py-6 select-none">
+        <div class="inline-flex items-center justify-center p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/40 rounded-md mb-4">
+          <CheckCircleIcon class="w-12 h-12 text-green-600 dark:text-green-400" />
+        </div>
+        <p class="text-xs font-bold text-gray-400 tracking-wider uppercase mb-0.5">No. Invoice</p>
+        <p class="text-xl font-black text-gray-900 dark:text-white mb-6">{{ posStore.lastResult?.invoice_no }}</p>
+        <BaseButton class="w-full" @click="showSuccessModal = false">Transaksi Baru</BaseButton>
       </div>
     </BaseModal>
   </div>
@@ -96,6 +102,12 @@ import PaymentPanel from "../components/pos/PaymentPanel.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
+import { 
+  MagnifyingGlassIcon, 
+  PlusIcon, 
+  ShoppingCartIcon, 
+  CheckCircleIcon 
+} from "@heroicons/vue/24/outline";
 
 const productStore = useProductStore();
 const posStore = usePosStore();
@@ -140,7 +152,6 @@ async function doCheckout() {
   }
 }
 
-// Reset keranjang saat modal sukses ditutup, biar siap transaksi baru
 watch(showSuccessModal, (val) => {
   if (!val) {
     posStore.lastResult = null;
@@ -150,8 +161,6 @@ watch(showSuccessModal, (val) => {
   }
 });
 
-// Integrasi barcode scanner USB: hasil scan langsung dicari & ditambahkan
-// ke keranjang jika produk ditemukan.
 useBarcode(async (barcode) => {
   const product = await productStore.findByBarcode(barcode);
   if (product) {

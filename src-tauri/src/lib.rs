@@ -9,6 +9,8 @@ use tauri::Manager;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             let conn = db::init_db(app);
             app.manage(DbState(Mutex::new(conn)));
@@ -39,6 +41,19 @@ pub fn run() {
             commands::report::get_category_report,
             commands::report::get_service_type_report,
             commands::report::get_stock_alert_report,
+            // Fase 5 — Supplier
+            commands::supplier::get_suppliers,
+            commands::supplier::add_supplier,
+            commands::supplier::update_supplier,
+            commands::supplier::delete_supplier,
+            // Fase 5 — Stock
+            commands::stock::add_stock_in,
+            commands::stock::get_stock_movements,
+            commands::stock::get_low_stock_products,
+            // Fase 5 — Backup
+            commands::backup::backup_database,
+            commands::backup::restore_database,
+            commands::backup::get_app_data_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

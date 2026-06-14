@@ -16,7 +16,6 @@
       />
     </div>
 
-    <!-- Tombol nominal cepat -->
     <div class="grid grid-cols-4 gap-2">
       <button
         v-for="amount in quickAmounts"
@@ -39,16 +38,44 @@
 
     <div class="grid grid-cols-2 gap-2 pt-1">
       <BaseButton variant="secondary" :disabled="processing" @click="$emit('clear')">Batal</BaseButton>
-      <BaseButton :disabled="!canCheckout || processing" @click="$emit('checkout')">
+      <BaseButton :disabled="!canCheckout || processing" @click="requestCheckout">
         {{ processing ? "Memproses..." : "Bayar" }}
       </BaseButton>
     </div>
+
+    <!-- Modal Konfirmasi Pembayaran -->
+    <BaseModal v-model="showConfirm" title="Konfirmasi Pembayaran">
+      <div class="space-y-4">
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Total Belanja</span>
+            <span class="font-bold text-gray-900 dark:text-white">{{ formatRupiah(total) }}</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Uang Dibayar</span>
+            <span class="font-bold text-gray-900 dark:text-white">{{ formatRupiah(Number(paidAmount)) }}</span>
+          </div>
+          <div class="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between text-sm">
+            <span class="text-gray-500">Kembalian</span>
+            <span class="font-bold text-green-600 dark:text-green-400">{{ formatRupiah(changeAmount) }}</span>
+          </div>
+        </div>
+        <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
+          Pastikan jumlah sudah benar sebelum memproses pembayaran.
+        </p>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <BaseButton variant="secondary" @click="showConfirm = false">Cek Lagi</BaseButton>
+          <BaseButton @click="confirmCheckout">✓ Proses Bayar</BaseButton>
+        </div>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import BaseButton from "../ui/BaseButton.vue";
+import BaseModal from "../ui/BaseModal.vue";
 
 const props = defineProps({
   total: { type: Number, default: 0 },
@@ -59,7 +86,19 @@ const props = defineProps({
   error: { type: String, default: null },
 });
 
-defineEmits(["update:paidAmount", "checkout", "clear"]);
+const emit = defineEmits(["update:paidAmount", "checkout", "clear"]);
+
+const showConfirm = ref(false);
+
+function requestCheckout() {
+  if (!props.canCheckout || props.processing) return;
+  showConfirm.value = true;
+}
+
+function confirmCheckout() {
+  showConfirm.value = false;
+  emit("checkout");
+}
 
 const quickAmounts = computed(() => {
   const total = props.total || 0;
@@ -69,15 +108,11 @@ const quickAmounts = computed(() => {
 });
 
 function formatRupiah(value) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(
-    value || 0
-  );
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value || 0);
 }
 
 function formatRupiahShort(value) {
-  if (value >= 1000) {
-    return `${(value / 1000).toLocaleString("id-ID")}rb`;
-  }
+  if (value >= 1000) return `${(value / 1000).toLocaleString("id-ID")}rb`;
   return formatRupiah(value);
 }
 </script>
