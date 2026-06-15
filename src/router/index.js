@@ -56,6 +56,12 @@ const routes = [
     meta: { title: "Riwayat Transaksi" },
   },
   {
+    path: "/rekap-kasir",
+    name: "rekap-kasir",
+    component: () => import("../views/CashierReportView.vue"),
+    meta: { title: "Rekap Kasir" },
+  },
+  {
     path: "/laporan",
     name: "laporan",
     component: () => import("../views/ReportView.vue"),

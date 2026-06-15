@@ -17,12 +17,30 @@
         </div>
       </div>
 
-      <div class="flex gap-2 flex-shrink-0 select-none">
+      <div class="flex gap-2 flex-shrink-0 select-none flex-wrap">
         <BaseButton variant="secondary" class="text-xs flex items-center gap-1.5" @click="showServiceModal = true">
           <PlusIcon class="w-3.5 h-3.5" />
           <span>Tambah Percetakan / Jasa <span class="opacity-50 ml-1">F3</span></span>
         </BaseButton>
+        <button
+          class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          @click="toggleCalculator"
+        >
+          <CalculatorIcon class="w-4 h-4" />
+          Kalkulator <span class="opacity-50 ml-1">F5</span>
+        </button>
       </div>
+
+      <!-- Kalkulator inline -->
+      <Transition name="slide-down">
+        <div v-if="showCalculator" class="flex-shrink-0">
+          <Calculator
+            :show="showCalculator"
+            @close="showCalculator = false"
+            @send-to-bayar="onCalculatorSend"
+          />
+        </div>
+      </Transition>
 
       <div class="flex-1 overflow-y-auto pr-1">
         <ProductGrid :products="productStore.products" @add="addToCart" />
@@ -77,7 +95,7 @@
       />
     </div>
 
-    <!-- Cheat sheet shortcut (toggle) -->
+    <!-- Cheat sheet shortcut -->
     <div class="fixed bottom-6 left-6 z-40 select-none">
       <Transition name="slide-up">
         <div
@@ -138,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from "vue";
+import { ref, reactive, nextTick, onMounted, onUnmounted, watch } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { useProductStore } from "../stores/productStore";
 import { usePosStore } from "../stores/posStore";
@@ -148,6 +166,7 @@ import ProductGrid from "../components/pos/ProductGrid.vue";
 import CartItem from "../components/pos/CartItem.vue";
 import PaymentPanel from "../components/pos/PaymentPanel.vue";
 import ReceiptModal from "../components/pos/ReceiptModal.vue";
+import Calculator from "../components/pos/Calculator.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
@@ -157,6 +176,7 @@ import {
   ShoppingCartIcon,
   TrashIcon,
   CommandLineIcon,
+  CalculatorIcon,
 } from "@heroicons/vue/24/outline";
 
 const productStore = useProductStore();
@@ -169,6 +189,7 @@ const showServiceModal = ref(false);
 const showClearModal = ref(false);
 const showShortcutSheet = ref(false);
 const showReceiptModal = ref(false);
+const showCalculator = ref(false);
 
 const receiptTransaction = ref(null);
 const receiptItems = ref([]);
@@ -183,12 +204,37 @@ const shortcuts = [
   { key: "F1", desc: "Fokus pencarian produk" },
   { key: "F2", desc: "Fokus field jumlah bayar" },
   { key: "F3", desc: "Tambah percetakan/jasa" },
+  { key: "F5", desc: "Toggle kalkulator" },
   { key: "F12", desc: "Kosongkan keranjang" },
   { key: "Enter", desc: "Proses bayar (di field bayar)" },
   { key: "Esc", desc: "Tutup modal / panel" },
 ];
 
-// Pasang shortcut keyboard
+// ─── Helpers ────────────────────────────────────────────────
+
+function toggleCalculator() {
+  showCalculator.value = !showCalculator.value;
+}
+
+function onCalculatorSend(val) {
+  posStore.paidAmount = val;
+  showCalculator.value = false;
+  // Fokus ke field bayar setelah kirim dari kalkulator
+  nextTick(() => {
+    const payInput = document.querySelector("input[data-shortcut-target='bayar']");
+    payInput?.focus();
+    payInput?.select();
+  });
+}
+
+// ─── Keyboard Shortcuts ──────────────────────────────────────
+// Urutan prioritas Escape (dari paling dalam ke luar):
+// 1. PaymentPanel (modal konfirmasi bayar / modal hutang)
+// 2. showShortcutSheet
+// 3. showCalculator
+// 4. showClearModal
+// 5. showServiceModal
+
 useKeyboardShortcut({
   onF1() {
     showShortcutSheet.value = false;
@@ -197,37 +243,49 @@ useKeyboardShortcut({
   },
   onF2() {
     showShortcutSheet.value = false;
-    // Fokus ke input bayar di PaymentPanel
     const payInput = document.querySelector("input[data-shortcut-target='bayar']");
     payInput?.focus();
     payInput?.select();
   },
   onF3() {
-    showClearModal.value = false;
     showServiceModal.value = true;
   },
+  onF5() {
+    toggleCalculator();
+  },
   onF12() {
-    if (posStore.cart.length > 0) {
-      confirmClearCart();
-    }
+    if (posStore.cart.length > 0) confirmClearCart();
   },
   onEscape() {
-    if (showShortcutSheet.value) {
-      showShortcutSheet.value = false;
-    } else if (showClearModal.value) {
-      showClearModal.value = false;
-    } else if (showServiceModal.value) {
-      showServiceModal.value = false;
-    }
-  },
-  onEnterBayar() {
-    if (posStore.isPaidEnough && posStore.cart.length > 0) {
-      // Trigger konfirmasi bayar via PaymentPanel
-      const payBtn = document.querySelector("[data-pay-btn]");
-      payBtn?.click();
-    }
+    // Kirim event ke PaymentPanel dulu — kalau PaymentPanel punya modal terbuka, dia yang handle
+    // PaymentPanel dispatch balik event "pos:escape:unhandled" kalau tidak ada yang ditutup
+    window.dispatchEvent(new CustomEvent("pos:escape"));
   },
 });
+
+// PaymentPanel tidak bisa handle → PosView yang lanjut tutup modal lain
+function handleEscapeUnhandled() {
+  if (showShortcutSheet.value) {
+    showShortcutSheet.value = false;
+    return;
+  }
+  if (showCalculator.value) {
+    showCalculator.value = false;
+    return;
+  }
+  if (showClearModal.value) {
+    showClearModal.value = false;
+    return;
+  }
+  if (showServiceModal.value) {
+    showServiceModal.value = false;
+    return;
+  }
+}
+
+
+
+// ─── Cart Actions ─────────────────────────────────────────────
 
 function addToCart(product) {
   if (product.stock <= 0) return;
@@ -259,6 +317,8 @@ function doClearCart() {
   showClearModal.value = false;
 }
 
+// ─── Checkout ────────────────────────────────────────────────
+
 async function doCheckout() {
   const ok = await posStore.checkout();
   if (ok && posStore.lastResult) {
@@ -279,13 +339,16 @@ async function doCheckout() {
       receiptTransaction.value = {
         invoice_no: posStore.lastResult.invoice_no,
         transaction_date: new Date().toISOString().replace("T", " ").slice(0, 19),
-        total_amount: 0, paid_amount: 0, change_amount: 0,
+        total_amount: 0,
+        paid_amount: 0,
+        change_amount: 0,
       };
     }
     showReceiptModal.value = true;
     await productStore.fetchAll(keyword.value);
   }
 }
+
 async function doCheckoutDebt(debtInfo) {
   const ok = await posStore.checkoutAsDebt(debtInfo);
   if (ok && posStore.lastResult) {
@@ -298,7 +361,7 @@ async function doCheckoutDebt(debtInfo) {
         invoice_no: posStore.lastResult.invoice_no,
         transaction_date: new Date().toISOString().replace("T", " ").slice(0, 19),
         total_amount: posStore.lastResult.total_amount ?? 0,
-        paid_amount: 0,
+        paid_amount: posStore.lastResult.paid_amount ?? 0,
         change_amount: 0,
       };
     } catch {
@@ -306,7 +369,9 @@ async function doCheckoutDebt(debtInfo) {
       receiptTransaction.value = {
         invoice_no: posStore.lastResult?.invoice_no ?? "",
         transaction_date: new Date().toISOString().replace("T", " ").slice(0, 19),
-        total_amount: 0, paid_amount: 0, change_amount: 0,
+        total_amount: 0,
+        paid_amount: 0,
+        change_amount: 0,
       };
     }
     showReceiptModal.value = true;
@@ -333,8 +398,13 @@ useBarcode(async (barcode) => {
 });
 
 onMounted(async () => {
+  window.addEventListener("pos:escape:unhandled", handleEscapeUnhandled);
   await productStore.fetchAll();
   searchInput.value?.focus();
+});
+
+onUnmounted(() => {
+  window.removeEventListener("pos:escape:unhandled", handleEscapeUnhandled);
 });
 </script>
 
@@ -347,5 +417,15 @@ onMounted(async () => {
 .slide-up-leave-to {
   opacity: 0;
   transform: translateY(8px);
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.2s ease;
+}
+.slide-down-enter-from,
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

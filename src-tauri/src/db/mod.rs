@@ -94,6 +94,20 @@ CREATE TABLE IF NOT EXISTS services (
     profit            REAL NOT NULL DEFAULT 0,
     transaction_date  DATETIME NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS cashier_reports (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    tanggal          DATE NOT NULL,
+    modal_awal       REAL NOT NULL DEFAULT 0,
+    total_penjualan  REAL NOT NULL DEFAULT 0,
+    total_percetakan REAL NOT NULL DEFAULT 0,
+    total_jasa       REAL NOT NULL DEFAULT 0,
+    total_pemasukan  REAL NOT NULL DEFAULT 0,
+    total_seharusnya REAL NOT NULL DEFAULT 0,
+    uang_aktual      REAL NOT NULL DEFAULT 0,
+    selisih          REAL NOT NULL DEFAULT 0,
+    catatan          TEXT,
+    created_at       DATETIME NOT NULL DEFAULT (datetime('now'))
+);
 
 INSERT OR IGNORE INTO categories (name) VALUES
     ('Makanan & Minuman'),

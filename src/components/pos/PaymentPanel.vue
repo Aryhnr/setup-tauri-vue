@@ -58,7 +58,7 @@
       </BaseButton>
     </div>
 
-    <!-- Tombol Hutang — muncul kalau bayar kurang dari total atau 0 -->
+    <!-- Tombol Hutang -->
     <BaseButton
       variant="secondary"
       class="w-full flex items-center justify-center gap-2 border-dashed border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -99,7 +99,6 @@
     <!-- Modal Catat Hutang -->
     <BaseModal v-model="showDebtModal" title="Catat Hutang Pelanggan">
       <div class="space-y-4">
-        <!-- Ringkasan pembayaran -->
         <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-1.5 text-sm">
           <div class="flex justify-between">
             <span class="text-gray-500">Total Belanja</span>
@@ -158,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import BaseButton from "../ui/BaseButton.vue";
 import BaseModal from "../ui/BaseModal.vue";
 import BaseInput from "../ui/BaseInput.vue";
@@ -185,7 +184,25 @@ const debtForm = reactive({
   notes: "",
 });
 
-// Sisa yang jadi hutang = total - bayar (kalau bayar < total)
+// Dengarkan event Escape dari PosView
+// Kalau ada modal yang terbuka → tutup dan beri tahu PosView bahwa sudah ditangani
+// Kalau tidak ada → dispatch "pos:escape:unhandled" agar PosView lanjut handle
+function handleEscapeEvent() {
+  if (showConfirm.value) {
+    showConfirm.value = false;
+    return; // handled — jangan dispatch unhandled
+  }
+  if (showDebtModal.value) {
+    showDebtModal.value = false;
+    return; // handled
+  }
+  // Tidak ada modal di PaymentPanel yang terbuka → lempar balik ke PosView
+  window.dispatchEvent(new CustomEvent("pos:escape:unhandled"));
+}
+
+onMounted(() => window.addEventListener("pos:escape", handleEscapeEvent));
+onUnmounted(() => window.removeEventListener("pos:escape", handleEscapeEvent));
+
 const debtAmount = computed(() => {
   const paid = Number(props.paidAmount) || 0;
   const sisa = props.total - paid;
@@ -216,7 +233,6 @@ function confirmDebt() {
     phone: debtForm.phone || null,
     due_date: debtForm.due_date || null,
     notes: debtForm.notes || null,
-    // Kirim jumlah yang sudah dibayar dan sisa hutang
     paid_upfront: Number(props.paidAmount) || 0,
     debt_amount: debtAmount.value > 0 ? debtAmount.value : props.total,
   });
@@ -231,7 +247,9 @@ const quickAmounts = computed(() => {
 
 function formatRupiah(value) {
   return new Intl.NumberFormat("id-ID", {
-    style: "currency", currency: "IDR", minimumFractionDigits: 0,
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
   }).format(value || 0);
 }
 
