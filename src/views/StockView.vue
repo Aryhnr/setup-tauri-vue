@@ -25,7 +25,7 @@
         </BaseButton>
       </div>
 
-      <BaseTable :columns="movementColumns" :rows="movements">
+      <BaseTable :columns="movementColumns" :rows="paginatedRows">
         <template #cell-movement_type="{ row }">
           <span
             class="px-2.5 py-1 rounded-md text-xs font-bold border"
@@ -41,6 +41,11 @@
         <template #cell-reference="{ row }">{{ row.reference || "-" }}</template>
         <template #cell-notes="{ row }">{{ row.notes || "-" }}</template>
       </BaseTable>
+      <BasePagination
+        v-model="currentPage"
+        :total="movements.length"
+        :per-page="perPage"
+      />
 
       <p v-if="loadingMovements" class="text-xs font-medium text-gray-400 px-1 select-none">Memuat riwayat sistem...</p>
 
@@ -207,6 +212,7 @@ import BaseButton from "../components/ui/BaseButton.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
 import BaseTable from "../components/ui/BaseTable.vue";
+import BasePagination from "../components/ui/BasePagination.vue";
 import {
   ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
@@ -267,6 +273,15 @@ const suggestions = computed(() => {
   return productStore.products
     .filter((p) => p.name.toLowerCase().includes(q))
     .slice(0, 8);
+});
+
+const currentPage = ref(1);
+const perPage = 20;
+
+// Sesuaikan nama array datanya (movements / suppliers / orders / services)
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * perPage;
+  return movements.value.slice(start, start + perPage);
 });
 
 function onProductSearchInput() {

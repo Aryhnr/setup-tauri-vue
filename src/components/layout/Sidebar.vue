@@ -26,13 +26,13 @@
     </nav>
 
     <div class="p-4 border-t border-gray-200 dark:border-gray-800">
-      <button 
-        class="flex items-center justify-center gap-2 w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" 
-        @click="toggleDark"
+      <button
+        class="flex items-center justify-center gap-2 w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        @click="themeStore.toggle()"
       >
-        <SunIcon v-if="isDark" class="w-5 h-5" />
+        <SunIcon v-if="themeStore.isDark" class="w-5 h-5" />
         <MoonIcon v-else class="w-5 h-5" />
-        <span>{{ isDark ? 'Light Mode' : 'Dark Mode' }}</span>
+        <span>{{ themeStore.isDark ? 'Light Mode' : 'Dark Mode' }}</span>
       </button>
     </div>
   </aside>
@@ -54,15 +54,21 @@ import {
   SunIcon,
   MoonIcon,
   ArrowDownTrayIcon,
+  ClipboardDocumentListIcon,
 } from "@heroicons/vue/24/outline";
+import { useThemeStore } from "../../stores/themeStore";
+import { useSettingStore } from "../../stores/settingStore";
 
 const route = useRoute();
+const themeStore = useThemeStore();
+const settingStore = useSettingStore();
+
 const storeName = ref("Toko Madura");
-const isDark = ref(false);
 
 const menu = [
   { path: "/", label: "Dashboard", icon: HomeIcon },
   { path: "/kasir", label: "Kasir / POS", icon: ShoppingCartIcon },
+  { path: "/transaksi", label: "Riwayat Transaksi", icon: ClipboardDocumentListIcon },
   { path: "/produk", label: "Produk", icon: CubeIcon },
   { path: "/stok", label: "Manajemen Stok", icon: ArrowDownTrayIcon },
   { path: "/percetakan", label: "Percetakan", icon: PrinterIcon },
@@ -76,15 +82,7 @@ function isActive(path) {
   return route.path === path;
 }
 
-function toggleDark() {
-  isDark.value = !isDark.value;
-  document.documentElement.classList.toggle("dark", isDark.value);
-  localStorage.setItem("theme", isDark.value ? "dark" : "light");
-}
-
 onMounted(() => {
-  const saved = localStorage.getItem("theme");
-  isDark.value = saved === "dark";
-  document.documentElement.classList.toggle("dark", isDark.value);
+  storeName.value = settingStore.storeName || "Toko Madura";
 });
 </script>

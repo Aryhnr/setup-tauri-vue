@@ -1,5 +1,13 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
+import { useToast } from "../composables/useToast";
+
+const STATUS_LABEL = {
+  ANTRIAN: "Antrian",
+  DIPROSES: "Diproses",
+  SELESAI: "Selesai",
+  DIBAYAR: "Dibayar",
+};
 
 export const usePrintOrderStore = defineStore("printOrder", {
   state: () => ({
@@ -9,10 +17,6 @@ export const usePrintOrderStore = defineStore("printOrder", {
   }),
 
   actions: {
-    /**
-     * Ambil seluruh order percetakan, opsional filter status.
-     * @param {string|null} status - ANTRIAN / DIPROSES / SELESAI / DIBAYAR
-     */
     async fetchAll(status = null) {
       this.loading = true;
       this.error = null;
@@ -26,11 +30,8 @@ export const usePrintOrderStore = defineStore("printOrder", {
       }
     },
 
-    /**
-     * Tambah order percetakan baru. order_no di-generate otomatis backend.
-     * @param {Object} payload
-     */
     async add(payload) {
+      const toast = useToast();
       const order = {
         id: null,
         order_no: null,
@@ -46,14 +47,11 @@ export const usePrintOrderStore = defineStore("printOrder", {
       };
       await invoke("add_print_order", { order });
       await this.fetchAll();
+      toast.success("Order percetakan berhasil ditambahkan");
     },
 
-    /**
-     * Update detail order (tidak mengubah status).
-     * @param {number} id
-     * @param {Object} payload
-     */
     async update(id, payload) {
+      const toast = useToast();
       const order = {
         id,
         order_no: null,
@@ -69,25 +67,21 @@ export const usePrintOrderStore = defineStore("printOrder", {
       };
       await invoke("update_print_order", { id, order });
       await this.fetchAll();
+      toast.success("Order percetakan berhasil diperbarui");
     },
 
-    /**
-     * Update status order: ANTRIAN -> DIPROSES -> SELESAI -> DIBAYAR.
-     * @param {number} id
-     * @param {string} status
-     */
     async updateStatus(id, status) {
+      const toast = useToast();
       await invoke("update_print_order_status", { id, status });
       await this.fetchAll();
+      toast.info(`Status order diubah ke: ${STATUS_LABEL[status] ?? status}`);
     },
 
-    /**
-     * Hapus order.
-     * @param {number} id
-     */
     async remove(id) {
+      const toast = useToast();
       await invoke("delete_print_order", { id });
       await this.fetchAll();
+      toast.success("Order berhasil dihapus");
     },
   },
 });

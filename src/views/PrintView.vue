@@ -20,7 +20,7 @@
       </BaseButton>
     </div>
 
-    <BaseTable :columns="columns" :rows="store.orders">
+    <BaseTable :columns="columns" :rows="paginatedRows">
       <template #cell-status="{ row }"><BadgeStatus :status="row.status" /></template>
       <template #cell-service_type="{ row }">{{ SERVICE_LABELS[row.service_type] || row.service_type }}</template>
       <template #cell-color_mode="{ row }">{{ row.color_mode === "BERWARNA" ? "Berwarna" : "Hitam Putih" }}</template>
@@ -55,6 +55,11 @@
         </div>
       </template>
     </BaseTable>
+    <BasePagination
+      v-model="currentPage"
+      :total="store.orders.length"
+      :per-page="perPage"
+    />
 
     <div class="flex flex-col gap-1 text-xs font-medium select-none px-1">
       <p v-if="store.loading" class="text-gray-400">Syncing database order...</p>
@@ -142,6 +147,8 @@ import BaseInput from "../components/ui/BaseInput.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
 import BaseTable from "../components/ui/BaseTable.vue";
 import BadgeStatus from "../components/ui/BadgeStatus.vue";
+// Tambah di bagian import
+import BasePagination from "../components/ui/BasePagination.vue";
 import { PlusIcon, PencilSquareIcon, TrashIcon } from "@heroicons/vue/24/outline";
 
 const store = usePrintOrderStore();
@@ -199,6 +206,15 @@ const form = reactive(emptyForm());
 
 const computedTotal = computed(() => {
   return (Number(form.pages) || 0) * (Number(form.copies) || 0) * (Number(form.price_per_page) || 0);
+});
+
+const currentPage = ref(1);
+const perPage = 20;
+
+// Sesuaikan nama array datanya (movements / suppliers / orders / services)
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * perPage;
+  return store.orders.slice(start, start + perPage);
 });
 
 function formatRupiah(value) {

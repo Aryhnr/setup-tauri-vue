@@ -17,7 +17,7 @@ const routes = [
     path: "/produk",
     name: "produk",
     component: () => import("../views/ProductView.vue"),
-    meta: { title: "Produk & Stok" },
+    meta: { title: "Produk" },
   },
   {
     path: "/stok",
@@ -42,6 +42,12 @@ const routes = [
     name: "supplier",
     component: () => import("../views/SupplierView.vue"),
     meta: { title: "Supplier" },
+  },
+  {
+    path: "/transaksi",
+    name: "transaksi",
+    component: () => import("../views/TransactionView.vue"),
+    meta: { title: "Riwayat Transaksi" },
   },
   {
     path: "/laporan",

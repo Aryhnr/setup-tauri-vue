@@ -58,7 +58,7 @@
     </div>
 
     <!-- Tabel -->
-    <BaseTable :columns="columns" :rows="store.services">
+    <BaseTable :columns="columns" :rows="paginatedRows">
       <template #cell-service_type="{ row }">{{ TYPE_LABELS[row.service_type] || row.service_type }}</template>
       <template #cell-sell_price="{ row }">{{ formatRupiah(row.sell_price) }}</template>
       <template #cell-buy_price="{ row }">{{ formatRupiah(row.buy_price) }}</template>
@@ -80,6 +80,11 @@
         </div>
       </template>
     </BaseTable>
+    <BasePagination
+      v-model="currentPage"
+      :total="store.services.length"
+      :per-page="perPage"
+    />
 
     <!-- State Status Footer -->
     <div class="flex flex-col gap-1 text-xs font-medium select-none px-1">
@@ -152,6 +157,7 @@ import BaseButton from "../components/ui/BaseButton.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
 import BaseTable from "../components/ui/BaseTable.vue";
+import BasePagination from "../components/ui/BasePagination.vue";
 import { 
   BanknotesIcon, 
   ArrowTrendingUpIcon, 
@@ -203,6 +209,15 @@ const emptyForm = () => ({
 const form = reactive(emptyForm());
 
 const computedProfit = computed(() => (Number(form.sell_price) || 0) - (Number(form.buy_price) || 0));
+
+const currentPage = ref(1);
+const perPage = 20;
+
+// Sesuaikan nama array datanya (movements / suppliers / orders / services)
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * perPage;
+  return store.services.slice(start, start + perPage);
+});
 
 function formatRupiah(value) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(

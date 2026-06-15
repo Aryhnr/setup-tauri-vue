@@ -6,13 +6,15 @@
     </div>
 
     <div>
-      <label class="label">Jumlah Bayar</label>
+      <label class="label">Jumlah Bayar <span class="text-xs text-gray-400 font-normal ml-1">(F2)</span></label>
       <input
         type="number"
         class="input text-lg font-semibold"
         :value="paidAmount"
         placeholder="0"
+        data-shortcut-target="bayar"
         @input="$emit('update:paidAmount', $event.target.value)"
+        @keydown.enter.prevent="requestCheckout"
       />
     </div>
 
@@ -38,7 +40,7 @@
 
     <div class="grid grid-cols-2 gap-2 pt-1">
       <BaseButton variant="secondary" :disabled="processing" @click="$emit('clear')">Batal</BaseButton>
-      <BaseButton :disabled="!canCheckout || processing" @click="requestCheckout">
+      <BaseButton data-pay-btn :disabled="!canCheckout || processing" @click="requestCheckout">
         {{ processing ? "Memproses..." : "Bayar" }}
       </BaseButton>
     </div>
