@@ -63,6 +63,13 @@ pub fn run() {
             commands::backup::backup_database,
             commands::backup::restore_database,
             commands::backup::get_app_data_dir,
+            // Hutang Pelanggan
+            commands::debt::get_debts,
+            commands::debt::add_debt,
+            commands::debt::add_debt_payment,
+            commands::debt::get_debt_payments,
+            commands::debt::delete_debt,
+            commands::debt::get_debt_summary,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

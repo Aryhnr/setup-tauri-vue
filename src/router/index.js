@@ -38,6 +38,12 @@ const routes = [
     meta: { title: "Jasa & Layanan" },
   },
   {
+    path: "/hutang",
+    name: "hutang",
+    component: () => import("../views/DebtView.vue"),
+    meta: { title: "Hutang Pelanggan" },
+  },
+  {
     path: "/supplier",
     name: "supplier",
     component: () => import("../views/SupplierView.vue"),

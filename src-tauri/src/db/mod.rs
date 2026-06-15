@@ -101,6 +101,27 @@ INSERT OR IGNORE INTO categories (name) VALUES
     ('Sembako'),
     ('Peralatan Rumah'),
     ('Lainnya');
+
+CREATE TABLE IF NOT EXISTS debts (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    phone      TEXT,
+    amount     REAL NOT NULL DEFAULT 0,
+    paid       REAL NOT NULL DEFAULT 0,
+    remaining  REAL NOT NULL DEFAULT 0,
+    notes      TEXT,
+    due_date   DATE,
+    status     TEXT NOT NULL DEFAULT 'AKTIF' CHECK (status IN ('AKTIF', 'LUNAS')),
+    created_at DATETIME NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS debt_payments (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    debt_id  INTEGER NOT NULL REFERENCES debts(id) ON DELETE CASCADE,
+    amount   REAL NOT NULL DEFAULT 0,
+    date     DATETIME NOT NULL DEFAULT (datetime('now')),
+    notes    TEXT
+);
 "#;
 
 /// Membuka koneksi SQLite di app data dir (toko.db) dan menjalankan schema.

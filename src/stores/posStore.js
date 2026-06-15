@@ -140,5 +140,70 @@ export const usePosStore = defineStore("pos", {
         this.processing = false;
       }
     },
+
+    async checkoutAsDebt(debtInfo) {
+      const { success, error } = useToast();
+      this.error = null;
+
+      if (this.cart.length === 0) {
+        this.error = "Keranjang masih kosong";
+        return false;
+      }
+
+      this.processing = true;
+      try {
+        const paidUpfront = Number(debtInfo.paid_upfront) || 0;
+        const debtAmount = Number(debtInfo.debt_amount) || this.total;
+
+        const payload = {
+          transaction_type: "PENJUALAN",
+          total_amount: this.total,
+          paid_amount: paidUpfront,
+          change_amount: 0,
+          notes: `HUTANG - ${debtInfo.name}${paidUpfront > 0 ? ` (DP: Rp${paidUpfront.toLocaleString("id-ID")})` : ""}`,
+          items: this.cart.map((item) => ({
+            product_id: item.product_id,
+            item_name: item.item_name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            subtotal: item.subtotal,
+          })),
+        };
+
+        this.lastResult = await invoke("process_transaction", { payload });
+
+        // Catat hutang sebesar sisa yang belum dibayar
+        await invoke("add_debt", {
+          payload: {
+            name: debtInfo.name,
+            phone: debtInfo.phone || null,
+            amount: debtAmount,
+            notes: debtInfo.notes
+              ? `${debtInfo.notes} | Invoice: ${this.lastResult.invoice_no}${paidUpfront > 0 ? ` | DP: Rp${paidUpfront.toLocaleString("id-ID")}` : ""}`
+              : `Invoice: ${this.lastResult.invoice_no}${paidUpfront > 0 ? ` | DP: Rp${paidUpfront.toLocaleString("id-ID")}` : ""}`,
+            due_date: debtInfo.due_date || null,
+          },
+        });
+
+        this.cart = [];
+        this.paidAmount = 0;
+
+        const msg =
+          paidUpfront > 0
+            ? `Transaksi berhasil! DP Rp${paidUpfront.toLocaleString("id-ID")}, hutang ${debtInfo.name} Rp${debtAmount.toLocaleString("id-ID")}`
+            : `Transaksi & hutang ${debtInfo.name} berhasil dicatat!`;
+
+        success(msg);
+        const { checkLowStock } = useNotification();
+        checkLowStock();
+        return true;
+      } catch (err) {
+        this.error = err?.toString() ?? "Gagal memproses";
+        error("Gagal: " + this.error);
+        return false;
+      } finally {
+        this.processing = false;
+      }
+    },
   },
 });

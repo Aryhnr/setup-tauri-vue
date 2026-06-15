@@ -72,6 +72,7 @@
         :error="posStore.error"
         @update:paid-amount="(val) => (posStore.paidAmount = val)"
         @checkout="doCheckout"
+        @checkout-debt="doCheckoutDebt"
         @clear="posStore.clearCart"
       />
     </div>
@@ -277,6 +278,33 @@ async function doCheckout() {
       receiptItems.value = [];
       receiptTransaction.value = {
         invoice_no: posStore.lastResult.invoice_no,
+        transaction_date: new Date().toISOString().replace("T", " ").slice(0, 19),
+        total_amount: 0, paid_amount: 0, change_amount: 0,
+      };
+    }
+    showReceiptModal.value = true;
+    await productStore.fetchAll(keyword.value);
+  }
+}
+async function doCheckoutDebt(debtInfo) {
+  const ok = await posStore.checkoutAsDebt(debtInfo);
+  if (ok && posStore.lastResult) {
+    try {
+      const items = await invoke("get_transaction_detail", {
+        transactionId: posStore.lastResult.id,
+      });
+      receiptItems.value = items;
+      receiptTransaction.value = {
+        invoice_no: posStore.lastResult.invoice_no,
+        transaction_date: new Date().toISOString().replace("T", " ").slice(0, 19),
+        total_amount: posStore.lastResult.total_amount ?? 0,
+        paid_amount: 0,
+        change_amount: 0,
+      };
+    } catch {
+      receiptItems.value = [];
+      receiptTransaction.value = {
+        invoice_no: posStore.lastResult?.invoice_no ?? "",
         transaction_date: new Date().toISOString().replace("T", " ").slice(0, 19),
         total_amount: 0, paid_amount: 0, change_amount: 0,
       };

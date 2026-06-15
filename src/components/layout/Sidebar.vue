@@ -55,6 +55,7 @@ import {
   MoonIcon,
   ArrowDownTrayIcon,
   ClipboardDocumentListIcon,
+  BanknotesIcon,
 } from "@heroicons/vue/24/outline";
 import { useThemeStore } from "../../stores/themeStore";
 import { useSettingStore } from "../../stores/settingStore";
@@ -73,6 +74,7 @@ const menu = [
   { path: "/stok", label: "Manajemen Stok", icon: ArrowDownTrayIcon },
   { path: "/percetakan", label: "Percetakan", icon: PrinterIcon },
   { path: "/jasa", label: "Jasa & Layanan", icon: BoltIcon },
+  { path: "/hutang", label: "Hutang Pelanggan", icon: BanknotesIcon },
   { path: "/supplier", label: "Supplier", icon: TruckIcon },
   { path: "/laporan", label: "Laporan", icon: ChartBarIcon },
   { path: "/pengaturan", label: "Pengaturan", icon: CogIcon },
