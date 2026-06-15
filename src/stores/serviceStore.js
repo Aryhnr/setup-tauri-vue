@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
+import { useToast } from "../composables/useToast";
 
 export const useServiceStore = defineStore("service", {
   state: () => ({
@@ -10,10 +11,6 @@ export const useServiceStore = defineStore("service", {
   }),
 
   actions: {
-    /**
-     * Ambil seluruh transaksi jasa digital, opsional filter service_type.
-     * @param {string|null} serviceType - TOKEN_PLN / TOPUP / PULSA / PAKET_DATA
-     */
     async fetchAll(serviceType = null) {
       this.loading = true;
       this.error = null;
@@ -27,11 +24,8 @@ export const useServiceStore = defineStore("service", {
       }
     },
 
-    /**
-     * Tambah transaksi jasa digital baru. Profit dihitung otomatis di backend.
-     * @param {Object} payload
-     */
     async add(payload) {
+      const toast = useToast();
       const sellPrice = Number(payload.sell_price) || 0;
       const buyPrice = Number(payload.buy_price) || 0;
       const service = {
@@ -47,21 +41,19 @@ export const useServiceStore = defineStore("service", {
       await invoke("add_service", { service });
       await this.fetchAll();
       await this.fetchSummaryToday();
+      toast.success(
+        `Jasa "${payload.description || payload.service_type}" berhasil dicatat`,
+      );
     },
 
-    /**
-     * Hapus transaksi jasa digital.
-     * @param {number} id
-     */
     async remove(id) {
+      const toast = useToast();
       await invoke("delete_service", { id });
       await this.fetchAll();
       await this.fetchSummaryToday();
+      toast.success("Transaksi jasa berhasil dihapus");
     },
 
-    /**
-     * Ambil ringkasan total penjualan & profit jasa hari ini.
-     */
     async fetchSummaryToday() {
       try {
         this.summaryToday = await invoke("get_service_summary_today");

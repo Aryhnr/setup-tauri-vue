@@ -34,7 +34,9 @@
       </div>
     </div>
 
-    <BaseTable :columns="columns" :rows="productStore.products">
+    <!-- Ganti bagian BaseTable dan bawahnya dengan ini: -->
+    <BaseTable :columns="columns" :rows="paginatedProducts">
+      <!-- slot yang sama persis seperti sebelumnya -->
       <template #cell-stock="{ row }">
         <span
           class="px-2.5 py-1 rounded-md text-xs font-bold border"
@@ -67,6 +69,12 @@
         </div>
       </template>
     </BaseTable>
+
+    <BasePagination
+      v-model="currentPage"
+      :total="productStore.products.length"
+      :per-page="perPage"
+    />
 
     <div class="flex flex-col gap-1 text-xs font-medium select-none px-1">
       <p v-if="productStore.loading" class="text-gray-400">Memuat data sistem...</p>
@@ -146,13 +154,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, computed } from "vue";
 import { useProductStore } from "../stores/productStore";
 import { useCategoryStore } from "../stores/categoryStore";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
 import BaseTable from "../components/ui/BaseTable.vue";
+import BasePagination from "../components/ui/BasePagination.vue";
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -193,6 +202,20 @@ const emptyForm = () => ({
 });
 
 const form = reactive(emptyForm());
+
+const currentPage = ref(1);
+const perPage = 20;
+
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * perPage;
+  return productStore.products.slice(start, start + perPage);
+});
+
+// Reset halaman saat search
+function search() {
+  currentPage.value = 1;
+  productStore.fetchAll(keyword.value);
+}
 
 function formatRupiah(value) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value || 0);
@@ -245,10 +268,6 @@ async function doDelete() {
     await productStore.remove(deleteTarget.value.id);
   }
   showDeleteModal.value = false;
-}
-
-function search() {
-  productStore.fetchAll(keyword.value);
 }
 
 onMounted(async () => {

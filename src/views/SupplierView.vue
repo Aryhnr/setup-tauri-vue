@@ -21,7 +21,7 @@
     </div>
 
     <!-- Tabel -->
-    <BaseTable :columns="columns" :rows="supplierStore.suppliers">
+    <BaseTable :columns="columns" :rows="paginatedRows">
       <template #cell-phone="{ row }">{{ row.phone || "-" }}</template>
       <template #cell-address="{ row }">
         <span class="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{{ row.address || "-" }}</span>
@@ -29,18 +29,17 @@
       <template #cell-notes="{ row }">
         <span class="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{{ row.notes || "-" }}</span>
       </template>
-      
       <template #actions="{ row }">
         <div class="flex justify-end gap-1 select-none">
-          <button 
-            class="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-200 dark:hover:border-blue-800/50 rounded-md transition-colors" 
+          <button
+            class="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-200 dark:hover:border-blue-800/50 rounded-md transition-colors"
             @click="openEdit(row)"
           >
             <PencilSquareIcon class="w-3.5 h-3.5" />
             <span>Edit</span>
           </button>
-          <button 
-            class="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200 dark:hover:border-red-800/50 rounded-md transition-colors" 
+          <button
+            class="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200 dark:hover:border-red-800/50 rounded-md transition-colors"
             @click="confirmDelete(row)"
           >
             <TrashIcon class="w-3.5 h-3.5" />
@@ -50,20 +49,26 @@
       </template>
     </BaseTable>
 
+    <BasePagination
+      v-model="currentPage"
+      :total="supplierStore.suppliers.length"
+      :per-page="perPage"
+    />
+
     <!-- State Status Footer -->
     <div class="flex flex-col gap-1 text-xs font-medium select-none px-1">
       <p v-if="supplierStore.loading" class="text-gray-400">Memuat basis data supplier...</p>
       <p v-if="supplierStore.error" class="text-red-500 font-bold">{{ supplierStore.error }}</p>
     </div>
 
-    <!-- Empty State Riwayat -->
+    <!-- Empty State -->
     <div
       v-if="!supplierStore.loading && supplierStore.suppliers.length === 0"
       class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-12 text-center text-gray-400 select-none"
     >
       <TruckIcon class="w-10 h-10 mx-auto mb-2 opacity-30" />
       <p class="text-sm font-bold text-gray-900 dark:text-white">Belum ada data supplier</p>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Klik tombol "+ Tambah Supplier" untuk memulai manajemen logistik</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Klik tombol "+ Tambah Supplier" untuk mulai</p>
     </div>
 
     <!-- Modal Tambah / Edit -->
@@ -71,9 +76,8 @@
       <form class="space-y-4" @submit.prevent="submit">
         <BaseInput v-model="form.name" label="Nama Supplier" required placeholder="CV. Sumber Makmur" />
         <BaseInput v-model="form.phone" label="Nomor Telepon" placeholder="08xxxxxxxxxx" />
-        
         <div>
-          <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Alamat Gudang</label>
+          <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Alamat</label>
           <textarea
             v-model="form.address"
             class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors resize-none"
@@ -81,9 +85,8 @@
             placeholder="Jl. Raya No. 1, Surabaya"
           ></textarea>
         </div>
-        
         <div>
-          <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Catatan Internal</label>
+          <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Catatan</label>
           <textarea
             v-model="form.notes"
             class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md px-3 py-2 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors resize-none"
@@ -91,7 +94,6 @@
             placeholder="Catatan tambahan..."
           ></textarea>
         </div>
-
         <div class="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
           <BaseButton type="button" variant="secondary" @click="showModal = false">Batal</BaseButton>
           <BaseButton type="submit">{{ isEdit ? "Simpan" : "Tambah" }}</BaseButton>
@@ -103,7 +105,8 @@
     <BaseModal v-model="showDeleteModal" title="Hapus Supplier">
       <div class="select-none">
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
-          Yakin ingin menghapus supplier <span class="font-bold text-gray-900 dark:text-white">[{{ deleteTarget?.name }}]</span>? Data produk eksternal yang terhubung di dalam sistem pergudangan tidak akan ikut terhapus.
+          Yakin ingin menghapus supplier <span class="font-bold text-gray-900 dark:text-white">[{{ deleteTarget?.name }}]</span>?
+          Data produk yang terhubung tidak akan ikut terhapus.
         </p>
         <div class="flex justify-end gap-2">
           <BaseButton variant="secondary" @click="showDeleteModal = false">Batal</BaseButton>
@@ -115,18 +118,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useSupplierStore } from "../stores/supplierStore";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
 import BaseTable from "../components/ui/BaseTable.vue";
-import { 
-  MagnifyingGlassIcon, 
-  PlusIcon, 
-  PencilSquareIcon, 
-  TrashIcon, 
-  TruckIcon 
+import BasePagination from "../components/ui/BasePagination.vue";
+import {
+  MagnifyingGlassIcon,
+  PlusIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  TruckIcon,
 } from "@heroicons/vue/24/outline";
 
 const supplierStore = useSupplierStore();
@@ -137,6 +141,9 @@ const showDeleteModal = ref(false);
 const isEdit = ref(false);
 const editId = ref(null);
 const deleteTarget = ref(null);
+
+const currentPage = ref(1);
+const perPage = 20;
 
 const columns = [
   { key: "name", label: "Nama Supplier" },
@@ -154,7 +161,13 @@ const emptyForm = () => ({
 
 const form = reactive(emptyForm());
 
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * perPage;
+  return supplierStore.suppliers.slice(start, start + perPage);
+});
+
 function search() {
+  currentPage.value = 1;
   supplierStore.fetchAll(keyword.value);
 }
 

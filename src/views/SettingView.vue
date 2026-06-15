@@ -120,8 +120,10 @@ import { useSettingStore } from "../stores/settingStore";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
+import { useToast } from "../composables/useToast";
 
 const settingStore = useSettingStore();
+const toast = useToast();
 
 const form = reactive({
   storeName: settingStore.storeName,
@@ -152,6 +154,7 @@ function saveInfo() {
   });
   savedInfo.value = true;
   setTimeout(() => (savedInfo.value = false), 2500);
+  toast.success("Informasi toko berhasil disimpan");
 }
 
 async function selectBackupDir() {
@@ -199,8 +202,10 @@ async function doBackup() {
     backupResult.value = resultPath;
     backupSuccess.value = true;
     settingStore.save({ backupDir: backupDir.value });
+    toast.success("Backup database berhasil!");
   } catch (err) {
     backupError.value = err?.toString() ?? "Backup gagal";
+    toast.error("Backup gagal: " + (err?.toString() ?? ""));
   } finally {
     backupLoading.value = false;
   }
@@ -223,6 +228,7 @@ async function doRestore() {
   try {
     await invoke("restore_database", { backupFile: restoreFile.value });
     restoreSuccess.value = true;
+    toast.success("Restore database berhasil! Restart aplikasi untuk memuat data terbaru.");
   } catch (err) {
     restoreError.value = err?.toString() ?? "Restore gagal";
   } finally {

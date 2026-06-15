@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
+import { useToast } from "../composables/useToast";
 
 export const useSupplierStore = defineStore("supplier", {
   state: () => ({
@@ -25,6 +26,7 @@ export const useSupplierStore = defineStore("supplier", {
     },
 
     async add(payload) {
+      const toast = useToast();
       const supplier = {
         id: null,
         name: payload.name,
@@ -34,9 +36,11 @@ export const useSupplierStore = defineStore("supplier", {
       };
       await invoke("add_supplier", { supplier });
       await this.fetchAll();
+      toast.success(`Supplier "${payload.name}" berhasil ditambahkan`);
     },
 
     async update(id, payload) {
+      const toast = useToast();
       const supplier = {
         id,
         name: payload.name,
@@ -46,11 +50,15 @@ export const useSupplierStore = defineStore("supplier", {
       };
       await invoke("update_supplier", { id, supplier });
       await this.fetchAll();
+      toast.success(`Supplier "${payload.name}" berhasil diperbarui`);
     },
 
     async remove(id) {
+      const toast = useToast();
+      const name = this.suppliers.find((s) => s.id === id)?.name ?? "Supplier";
       await invoke("delete_supplier", { id });
       await this.fetchAll();
+      toast.success(`"${name}" berhasil dihapus`);
     },
   },
 });

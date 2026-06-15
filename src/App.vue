@@ -9,6 +9,9 @@
     </div>
   </div>
 
+  <!-- Toast Global (Fase 6.2) -->
+  <ToastContainer />
+
   <Teleport to="body">
     <!-- Notifikasi Stok Menipis -->
     <Transition name="toast">
@@ -65,12 +68,16 @@
 import { onMounted } from "vue";
 import Sidebar from "./components/layout/Sidebar.vue";
 import Header from "./components/layout/Header.vue";
+import ToastContainer from "./components/ui/ToastContainer.vue";
 import { useNotification } from "./composables/useNotification";
 import { scannerReady } from "./composables/useBarcode";
+import { useThemeStore } from "./stores/themeStore";
 
 const { showAlert, lowStockItems, checkLowStock, dismissAlert } = useNotification();
+const themeStore = useThemeStore();
 
 onMounted(() => {
+  themeStore.init();
   checkLowStock();
 });
 </script>

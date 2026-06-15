@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
+import { useToast } from "../composables/useToast";
 
 export const useProductStore = defineStore("product", {
   state: () => ({
@@ -9,19 +10,12 @@ export const useProductStore = defineStore("product", {
   }),
 
   getters: {
-    /**
-     * Produk dengan stok di bawah atau sama dengan batas minimum.
-     */
     lowStockProducts(state) {
       return state.products.filter((p) => p.stock <= p.min_stock);
     },
   },
 
   actions: {
-    /**
-     * Ambil seluruh produk, opsional filter berdasarkan keyword (nama / barcode).
-     * @param {string} keyword
-     */
     async fetchAll(keyword = "") {
       this.loading = true;
       this.error = null;
@@ -37,11 +31,8 @@ export const useProductStore = defineStore("product", {
       }
     },
 
-    /**
-     * Tambah produk baru.
-     * @param {Object} payload
-     */
     async add(payload) {
+      const toast = useToast();
       const product = {
         id: null,
         barcode: payload.barcode || null,
@@ -59,14 +50,11 @@ export const useProductStore = defineStore("product", {
       };
       await invoke("add_product", { product });
       await this.fetchAll();
+      toast.success(`Produk "${payload.name}" berhasil ditambahkan`);
     },
 
-    /**
-     * Update produk berdasarkan id.
-     * @param {number} id
-     * @param {Object} payload
-     */
     async update(id, payload) {
+      const toast = useToast();
       const product = {
         id,
         barcode: payload.barcode || null,
@@ -84,21 +72,17 @@ export const useProductStore = defineStore("product", {
       };
       await invoke("update_product", { id, product });
       await this.fetchAll();
+      toast.success(`Produk "${payload.name}" berhasil diperbarui`);
     },
 
-    /**
-     * Hapus produk berdasarkan id.
-     * @param {number} id
-     */
     async remove(id) {
+      const toast = useToast();
+      const name = this.products.find((p) => p.id === id)?.name ?? "Produk";
       await invoke("delete_product", { id });
       await this.fetchAll();
+      toast.success(`"${name}" berhasil dihapus`);
     },
 
-    /**
-     * Cari produk berdasarkan barcode (untuk Modul POS nanti).
-     * @param {string} barcode
-     */
     async findByBarcode(barcode) {
       return await invoke("find_product_by_barcode", { barcode });
     },
