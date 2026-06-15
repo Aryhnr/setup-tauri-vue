@@ -70,6 +70,10 @@ pub fn run() {
             commands::debt::get_debt_payments,
             commands::debt::delete_debt,
             commands::debt::get_debt_summary,
+            // Rekap Kasir
+            commands::cashier_report::get_daily_summary,
+            commands::cashier_report::save_cashier_report,
+            commands::cashier_report::get_cashier_reports,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

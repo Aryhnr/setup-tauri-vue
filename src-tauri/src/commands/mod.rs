@@ -1,4 +1,5 @@
 pub mod backup;
+pub mod cashier_report;
 pub mod category;
 pub mod debt;
 pub mod print_order;

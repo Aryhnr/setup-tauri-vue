@@ -1,53 +1,53 @@
 import { onMounted, onUnmounted } from "vue";
 
-/**
- * Composable shortcut keyboard untuk halaman Kasir/POS.
- * Hanya aktif ketika tidak ada input/textarea yang sedang fokus
- * (kecuali shortcut yang memang untuk field tertentu).
- *
- * @param {Object} handlers - { onF1, onF2, onF3, onF12, onEscape }
- */
 export function useKeyboardShortcut(handlers = {}) {
   function handleKeydown(e) {
-    // Jangan intercept kalau user sedang ketik di input biasa
-    // (kecuali field yang punya data-barcode-input)
-    const tag = document.activeElement?.tagName;
-    const isTyping =
+    const active = document.activeElement;
+    const tag = active?.tagName;
+    const isTypingField =
       (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") &&
-      !document.activeElement?.dataset?.shortcutTarget;
+      !active?.dataset?.shortcutTarget;
 
     switch (e.key) {
       case "F1":
         e.preventDefault();
         handlers.onF1?.();
-        break;
+        return;
 
       case "F2":
         e.preventDefault();
         handlers.onF2?.();
-        break;
+        return;
 
       case "F3":
         e.preventDefault();
         handlers.onF3?.();
-        break;
+        return;
+
+      case "F5":
+        e.preventDefault();
+        handlers.onF5?.();
+        return;
 
       case "F12":
         e.preventDefault();
         handlers.onF12?.();
-        break;
+        return;
 
       case "Escape":
+        e.preventDefault();
         handlers.onEscape?.();
-        break;
+        return;
 
       case "Enter":
-        // Enter di field bayar → trigger checkout
-        if (document.activeElement?.dataset?.shortcutTarget === "bayar") {
-          e.preventDefault();
-          handlers.onEnterBayar?.();
+        if (active?.dataset?.shortcutTarget === "bayar") {
+          return;
         }
-        break;
+        if (!isTypingField && handlers.onEnter) {
+          e.preventDefault();
+          handlers.onEnter?.();
+        }
+        return;
 
       default:
         break;

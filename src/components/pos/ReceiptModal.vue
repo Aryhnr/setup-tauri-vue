@@ -55,9 +55,9 @@
 
     <!-- Tombol aksi -->
     <div class="flex gap-2 mt-5 pt-4 border-t border-gray-100 dark:border-gray-800">
-      <BaseButton variant="secondary" class="flex-1" @click="printReceipt">
+      <BaseButton variant="secondary" class="flex-1" :disabled="printing" @click="printReceipt">
         <PrinterIcon class="w-4 h-4 mr-1.5 inline" />
-        Print Struk
+        {{ printing ? "Mencetak..." : "Print Struk" }}
       </BaseButton>
       <BaseButton class="flex-1" @click="$emit('update:modelValue', false)">
         Transaksi Baru
@@ -67,11 +67,13 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import BaseModal from "../ui/BaseModal.vue";
 import BaseButton from "../ui/BaseButton.vue";
 import { PrinterIcon } from "@heroicons/vue/24/outline";
 import { useSettingStore } from "../../stores/settingStore";
+import { useToast } from "../../composables/useToast";
+import { printHtml } from "../../composables/usePrint";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -83,6 +85,8 @@ defineEmits(["update:modelValue"]);
 
 const settingStore = useSettingStore();
 const settings = computed(() => settingStore.$state);
+const { success, error: toastError } = useToast();
+const printing = ref(false);
 
 function formatRupiah(value) {
   return new Intl.NumberFormat("id-ID", {
@@ -99,21 +103,21 @@ function formatDate(dateStr) {
   });
 }
 
-function printReceipt() {
-  const s = settingStore;
-  const itemRows = props.items.map(i =>
-    `<div style="margin-bottom:6px">
-      <div style="font-weight:600">${i.item_name}</div>
-      <div style="display:flex;justify-content:space-between;color:#666">
-        <span>${i.quantity} x ${formatRupiah(i.unit_price)}</span>
-        <span>${formatRupiah(i.subtotal)}</span>
-      </div>
-    </div>`
-  ).join("");
+async function printReceipt() {
+  printing.value = true;
+  try {
+    const s = settingStore;
+    const itemRows = props.items.map((i) =>
+      `<div style="margin-bottom:6px">
+        <div style="font-weight:600">${i.item_name}</div>
+        <div style="display:flex;justify-content:space-between;color:#666">
+          <span>${i.quantity} x ${formatRupiah(i.unit_price)}</span>
+          <span>${formatRupiah(i.subtotal)}</span>
+        </div>
+      </div>`
+    ).join("");
 
-  const win = window.open("", "_blank", "width=400,height=600");
-  win.document.write(`
-    <!DOCTYPE html><html><head><meta charset="utf-8">
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>Struk ${props.transaction?.invoice_no}</title>
     <style>
       *{margin:0;padding:0;box-sizing:border-box}
@@ -124,8 +128,9 @@ function printReceipt() {
       .gray{color:#666}
       .divider{border-top:1px dashed #ccc;margin:8px 0}
       .row{display:flex;justify-content:space-between}
+      @media print{body{padding:0}}
     </style></head><body>
-    <div class="center bold big">${s.storeName}</div>
+    <div class="center bold big">${s.storeName || "Kasir"}</div>
     ${s.storeAddress ? `<div class="center gray">${s.storeAddress}</div>` : ""}
     ${s.storePhone ? `<div class="center gray">Telp: ${s.storePhone}</div>` : ""}
     <div class="divider"></div>
@@ -139,10 +144,15 @@ function printReceipt() {
     <div class="row gray"><span>Kembali</span><span>${formatRupiah(props.transaction?.change_amount)}</span></div>
     <div class="divider"></div>
     <div class="center gray">Terima kasih telah berbelanja!</div>
-    </body></html>
-  `);
-  win.document.close();
-  win.focus();
-  setTimeout(() => { win.print(); win.close(); }, 300);
+    </body></html>`;
+
+    await printHtml(html);
+    success("Struk berhasil dicetak!");
+  } catch (err) {
+    console.error("printReceipt error:", err);
+    toastError("Gagal mencetak struk");
+  } finally {
+    printing.value = false;
+  }
 }
 </script>

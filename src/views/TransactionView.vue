@@ -108,7 +108,9 @@
           </div>
         </div>
 
-        <div class="border border-gray-100 dark:border-gray-800 rounded-lg overflow-hidden">
+        <div v-if="loadingDetail" class="text-xs text-gray-400 py-4 text-center">Memuat detail...</div>
+
+        <div v-else class="border border-gray-100 dark:border-gray-800 rounded-lg overflow-hidden">
           <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -145,9 +147,9 @@
         </div>
 
         <div class="flex gap-2">
-          <BaseButton variant="secondary" class="flex-1" @click="printDetail">
+          <BaseButton variant="secondary" class="flex-1" :disabled="printing" @click="printDetail">
             <PrinterIcon class="w-4 h-4 mr-1.5 inline" />
-            Cetak Ulang
+            {{ printing ? "Mencetak..." : "Cetak Ulang" }}
           </BaseButton>
           <BaseButton variant="danger" class="flex-1" @click="confirmVoidFromDetail">
             Void Transaksi
@@ -183,6 +185,7 @@ import { ref, computed, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "../composables/useToast";
 import { useSettingStore } from "../stores/settingStore";
+import { printHtml } from "../composables/usePrint";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
 import BaseTable from "../components/ui/BaseTable.vue";
@@ -201,6 +204,8 @@ const filter = ref({
 
 const transactions = ref([]);
 const loading = ref(false);
+const printing = ref(false);
+const loadingDetail = ref(false);
 
 const currentPage = ref(1);
 const perPage = 20;
@@ -263,11 +268,16 @@ async function fetchData() {
 
 async function openDetail(tx) {
   selectedTx.value = tx;
+  detailItems.value = [];
   showDetailModal.value = true;
+  loadingDetail.value = true;
   try {
     detailItems.value = await invoke("get_transaction_detail", { transactionId: tx.id });
   } catch {
     detailItems.value = [];
+    toastError("Gagal memuat detail transaksi");
+  } finally {
+    loadingDetail.value = false;
   }
 }
 
@@ -298,43 +308,60 @@ async function doVoid() {
   }
 }
 
-function printDetail() {
-  const s = settingStore;
-  const win = window.open("", "_blank", "width=400,height=600");
-  const itemRows = detailItems.value.map(i =>
-    `<tr><td>${i.item_name}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">${formatRupiah(i.unit_price)}</td><td style="text-align:right">${formatRupiah(i.subtotal)}</td></tr>`
-  ).join("");
-  win.document.write(`
-    <!DOCTYPE html><html><head><meta charset="utf-8">
+async function printDetail() {
+  printing.value = true;
+  try {
+    const s = settingStore;
+    const itemRows = detailItems.value.map((i) =>
+      `<tr>
+        <td>${i.item_name}</td>
+        <td style="text-align:center">${i.quantity}</td>
+        <td style="text-align:right">${formatRupiah(i.unit_price)}</td>
+        <td style="text-align:right">${formatRupiah(i.subtotal)}</td>
+      </tr>`
+    ).join("");
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>Struk ${selectedTx.value?.invoice_no}</title>
     <style>
+      *{margin:0;padding:0;box-sizing:border-box}
       body{font-family:monospace;font-size:12px;padding:16px;max-width:280px}
       table{width:100%;border-collapse:collapse}
       th,td{padding:3px 4px;font-size:11px}
       th{border-bottom:1px dashed #ccc;text-align:left}
       .center{text-align:center}.bold{font-weight:700}.big{font-size:14px}
       .gray{color:#666}.divider{border-top:1px dashed #ccc;margin:8px 0}
+      .row{display:flex;justify-content:space-between}
+      @page{size:80mm auto;margin:0}
+      @media print{body{padding:8px}}
     </style></head><body>
-    <div class="center bold big">${s.storeName}</div>
+    <div class="center bold big">${s.storeName || "Kasir"}</div>
     ${s.storeAddress ? `<div class="center gray">${s.storeAddress}</div>` : ""}
     ${s.storePhone ? `<div class="center gray">Telp: ${s.storePhone}</div>` : ""}
     <div class="divider"></div>
     <div>No: <b>${selectedTx.value?.invoice_no}</b></div>
     <div class="gray">${formatDate(selectedTx.value?.transaction_date)}</div>
     <div class="divider"></div>
-    <table><thead><tr><th>Item</th><th>Qty</th><th>Harga</th><th>Sub</th></tr></thead>
-    <tbody>${itemRows}</tbody></table>
+    <table>
+      <thead><tr><th>Item</th><th>Qty</th><th>Harga</th><th>Sub</th></tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>
     <div class="divider"></div>
-    <div style="display:flex;justify-content:space-between"><span class="bold">TOTAL</span><span class="bold">${formatRupiah(selectedTx.value?.total_amount)}</span></div>
-    <div style="display:flex;justify-content:space-between" class="gray"><span>Bayar</span><span>${formatRupiah(selectedTx.value?.paid_amount)}</span></div>
-    <div style="display:flex;justify-content:space-between" class="gray"><span>Kembali</span><span>${formatRupiah(selectedTx.value?.change_amount)}</span></div>
+    <div class="row"><span class="bold">TOTAL</span><span class="bold">${formatRupiah(selectedTx.value?.total_amount)}</span></div>
+    <div class="row gray"><span>Bayar</span><span>${formatRupiah(selectedTx.value?.paid_amount)}</span></div>
+    <div class="row gray"><span>Kembali</span><span>${formatRupiah(selectedTx.value?.change_amount)}</span></div>
     <div class="divider"></div>
     <div class="center gray">Terima kasih!</div>
-    </body></html>
-  `);
-  win.document.close();
-  win.focus();
-  setTimeout(() => { win.print(); win.close(); }, 300);
+    </body></html>`;
+
+    await printHtml(html);
+    success("Struk berhasil dicetak!");
+  } catch (err) {
+    console.error("printDetail error:", err);
+    toastError("Gagal mencetak struk");
+  } finally {
+    printing.value = false;
+  }
 }
 
 onMounted(fetchData);
